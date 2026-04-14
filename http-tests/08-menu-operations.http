@@ -1,0 +1,27 @@
+@baseUrl = http://localhost:5140/api/menus
+
+### List all menus (from PG view)
+GET {{baseUrl}}
+
+### List menus by owner
+GET {{baseUrl}}?ownerId=rest-001
+
+### Get a single menu
+# Replace {menuId} with a real menu ID
+GET {{baseUrl}}/{menuId}
+
+### Update a menu
+PATCH {{baseUrl}}/{menuId}
+Content-Type: application/json
+
+{
+  "name": "Updated Lunch Special",
+  "description": "Updated description",
+  "isActive": true
+}
+
+### Get menu stats
+GET {{baseUrl}}/{menuId}/stats
+
+### Soft-delete a menu
+DELETE {{baseUrl}}/{menuId}

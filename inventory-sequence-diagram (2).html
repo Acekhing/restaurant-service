@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Service — Sequence Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #090b0f;
+    --surface:   #0f1218;
+    --surface2:  #161b24;
+    --border:    #1e2530;
+    --border2:   #263040;
+
+    --txt-primary:   #e8edf5;
+    --txt-secondary: #7a8a9e;
+    --txt-muted:     #3d4f63;
+
+    --blue:      #3d8ef0;
+    --blue-dim:  #1a3a6a;
+    --blue-bg:   #0a1828;
+
+    --purple:    #9d7fea;
+    --purple-dim:#3a2870;
+    --purple-bg: #0e0a20;
+
+    --amber:     #e8a838;
+    --amber-dim: #5a3d0e;
+    --amber-bg:  #140e02;
+
+    --green:     #5ab86c;
+    --green-dim: #1a4024;
+    --green-bg:  #060e08;
+
+    --gray-line: #2a3545;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  html { font-size: 14px; }
+  body {
+    background: var(--bg);
+    color: var(--txt-primary);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--txt-primary);
+    letter-spacing: 0.02em;
+  }
+  header span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--txt-muted);
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+    margin-left: auto;
+  }
+  .tag.blue   { color: var(--blue);   border-color: var(--blue-dim);   background: var(--blue-bg); }
+  .tag.purple { color: var(--purple); border-color: var(--purple-dim); background: var(--purple-bg); }
+  .tag.amber  { color: var(--amber);  border-color: var(--amber-dim);  background: var(--amber-bg); }
+  .tag.green  { color: var(--green);  border-color: var(--green-dim);  background: var(--green-bg); }
+
+  /* ── Scroll wrapper ── */
+  .scroll-wrap {
+    overflow-x: auto;
+    padding: 32px 32px 48px;
+  }
+
+  /* ── Diagram SVG ── */
+  svg { display: block; font-family: var(--mono); }
+
+  /* Participant boxes */
+  .p-box    { fill: var(--surface2); stroke: var(--border2); stroke-width: 1; }
+  .p-box-blue   { fill: var(--blue-bg);   stroke: var(--blue-dim); }
+  .p-box-purple { fill: var(--purple-bg); stroke: var(--purple-dim); stroke-width: 1.2; }
+  .p-box-amber  { fill: var(--amber-bg);  stroke: var(--amber-dim); }
+  .p-box-green  { fill: var(--green-bg);  stroke: var(--green-dim); }
+
+  .p-label       { fill: var(--txt-secondary); font-size: 9px; font-weight: 500; }
+  .p-label-blue  { fill: var(--blue); }
+  .p-label-purple{ fill: var(--purple); }
+  .p-label-amber { fill: var(--amber); }
+  .p-label-green { fill: var(--green); }
+
+  /* Lifelines */
+  .lifeline { stroke: var(--gray-line); stroke-width: 0.5; stroke-dasharray: 4 6; }
+  .lifeline-purple { stroke: var(--purple-dim); stroke-width: 0.5; stroke-dasharray: 4 6; }
+  .lifeline-amber  { stroke: var(--amber-dim);  stroke-width: 0.5; stroke-dasharray: 4 6; }
+  .lifeline-green  { stroke: var(--green-dim);  stroke-width: 0.5; stroke-dasharray: 4 6; }
+
+  /* Section bands */
+  .band-write  { fill: rgba(157,127,234,0.04); stroke: var(--purple-dim); stroke-width: 0.5; stroke-dasharray: 4 4; }
+  .band-relay  { fill: rgba(232,168,56,0.04);  stroke: var(--amber-dim);  stroke-width: 0.5; stroke-dasharray: 4 4; }
+  .band-kafka  { fill: rgba(90,184,108,0.04);  stroke: var(--green-dim);  stroke-width: 0.5; stroke-dasharray: 4 4; }
+  .band-read   { fill: rgba(61,142,240,0.04);  stroke: var(--blue-dim);   stroke-width: 0.5; stroke-dasharray: 4 4; }
+
+  .band-label         { font-size: 8px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .band-label-purple  { fill: var(--purple); }
+  .band-label-amber   { fill: var(--amber); }
+  .band-label-green   { fill: var(--green); }
+  .band-label-blue    { fill: var(--blue); }
+  .band-sublabel      { fill: var(--txt-muted); font-size: 7px; }
+
+  /* Arrows */
+  .arr-def    { stroke: var(--gray-line); stroke-width: 1.2; fill: none; }
+  .arr-blue   { stroke: var(--blue);   stroke-width: 1.2; fill: none; }
+  .arr-purple { stroke: var(--purple); stroke-width: 1.6; fill: none; }
+  .arr-amber  { stroke: var(--amber);  stroke-width: 1.2; fill: none; }
+  .arr-green  { stroke: var(--green);  stroke-width: 1.2; fill: none; }
+  .arr-dashed { stroke-dasharray: 5 3; }
+
+  /* Arrow labels */
+  .lbl-num  { fill: var(--txt-muted); font-size: 7.5px; font-weight: 600; }
+  .lbl-def  { fill: var(--txt-secondary); font-size: 8px; }
+  .lbl-blue  { fill: var(--blue);   font-size: 8px; }
+  .lbl-purple{ fill: var(--purple); font-size: 8px; font-weight: 500; }
+  .lbl-amber { fill: var(--amber);  font-size: 8px; }
+  .lbl-green { fill: var(--green);  font-size: 8px; }
+
+  /* Commit pill */
+  .commit-bg  { fill: var(--purple-bg); stroke: var(--purple-dim); stroke-width: 0.5; }
+  .commit-txt { fill: var(--purple); font-size: 7.5px; }
+
+  /* Group label boxes at top */
+  .grp-blue   { fill: var(--blue-bg);   stroke: var(--blue-dim);   stroke-width: 0.5; }
+  .grp-gray   { fill: var(--surface2);  stroke: var(--border);     stroke-width: 0.5; }
+  .grp-amber  { fill: var(--amber-bg);  stroke: var(--amber-dim);  stroke-width: 0.5; }
+  .grp-green  { fill: var(--green-bg);  stroke: var(--green-dim);  stroke-width: 0.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>inventory-service</h1>
+  <span>sequence diagram</span>
+  <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+    <span class="tag purple">write path</span>
+    <span class="tag amber">outbox relay</span>
+    <span class="tag green">consumers</span>
+    <span class="tag blue">read side</span>
+  </div>
+</header>
+
+<div class="scroll-wrap">
+<svg width="1460" height="1010" viewBox="0 0 1460 1010" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="m-def"    markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#2a3545"/></marker>
+  <marker id="m-blue"   markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#3d8ef0"/></marker>
+  <marker id="m-purple" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#9d7fea"/></marker>
+  <marker id="m-amber"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#e8a838"/></marker>
+  <marker id="m-green"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#5ab86c"/></marker>
+  <marker id="m-gray"   markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 Z" fill="#3d4f63"/></marker>
+</defs>
+
+<!-- ══════════════════════════════════════════════
+     COLUMN X-CENTRES
+     CustApp=58  Merchant=162  BackOff=266
+     API=386  Item=506  Price=606  Avail=710  Stats=814  Outbox=914
+     Relay=1010  Kafka=1104  Elastic=1198  Audit=1292
+     Consumers=1390
+══════════════════════════════════════════════ -->
+
+<!-- ── Group header bands ── -->
+<rect class="grp-blue"  x="8"    y="6"   width="330" height="64" rx="4"/>
+<text class="p-label-blue" x="18" y="20" font-size="8.5" font-weight="600">Client applications</text>
+
+<rect class="grp-gray"  x="460"  y="6"   width="500" height="64" rx="4"/>
+<text class="p-label"   x="470" y="20"   font-size="8.5" font-weight="600">PostgreSQL — system of record</text>
+
+<rect class="grp-amber" x="972"  y="6"   width="268" height="64" rx="4"/>
+<text class="p-label-amber" x="982" y="20" font-size="8.5" font-weight="600">Async distribution</text>
+
+<rect class="grp-green" x="1300" y="6"   width="152" height="64" rx="4"/>
+<text class="p-label-green" x="1310" y="20" font-size="8.5" font-weight="600">Idempotent consumers</text>
+
+<!-- ── Participant boxes ── -->
+<!-- Customer App -->
+<rect class="p-box p-box-blue" x="13"  y="22" width="90" height="36" rx="3"/>
+<text class="p-label-blue" x="58"  y="37" text-anchor="middle" font-size="8.5" font-weight="500">Customer</text>
+<text class="p-label-blue" x="58"  y="50" text-anchor="middle" font-size="8.5">App</text>
+
+<!-- Merchant Portal -->
+<rect class="p-box p-box-blue" x="116" y="22" width="92" height="36" rx="3"/>
+<text class="p-label-blue" x="162" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Merchant</text>
+<text class="p-label-blue" x="162" y="50" text-anchor="middle" font-size="8.5">Portal</text>
+
+<!-- BackOffice -->
+<rect class="p-box p-box-blue" x="220" y="22" width="92" height="36" rx="3"/>
+<text class="p-label-blue" x="266" y="37" text-anchor="middle" font-size="8.5" font-weight="500">BackOffice</text>
+<text class="p-label-blue" x="266" y="50" text-anchor="middle" font-size="8.5">Admin</text>
+
+<!-- API -->
+<rect class="p-box p-box-purple" x="340" y="16" width="92" height="48" rx="3"/>
+<text class="p-label-purple" x="386" y="34" text-anchor="middle" font-size="8.5" font-weight="600">Inventory</text>
+<text class="p-label-purple" x="386" y="47" text-anchor="middle" font-size="8.5">Service API</text>
+<text x="386" y="58" text-anchor="middle" font-size="7" fill="#5a4a90">(gateway)</text>
+
+<!-- InvItem -->
+<rect class="p-box" x="461" y="22" width="90" height="36" rx="3"/>
+<text class="p-label" x="506" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Inventory</text>
+<text class="p-label" x="506" y="50" text-anchor="middle" font-size="8.5">Item</text>
+
+<!-- InvPrice -->
+<rect class="p-box" x="561" y="22" width="90" height="36" rx="3"/>
+<text class="p-label" x="606" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Inventory</text>
+<text class="p-label" x="606" y="50" text-anchor="middle" font-size="8.5">Price</text>
+
+<!-- InvAvail -->
+<rect class="p-box" x="665" y="22" width="90" height="36" rx="3"/>
+<text class="p-label" x="710" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Inventory</text>
+<text class="p-label" x="710" y="50" text-anchor="middle" font-size="8.5">Availability</text>
+
+<!-- InvStats -->
+<rect class="p-box" x="769" y="22" width="90" height="36" rx="3"/>
+<text class="p-label" x="814" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Inventory</text>
+<text class="p-label" x="814" y="50" text-anchor="middle" font-size="8.5">Stats</text>
+
+<!-- Outbox -->
+<rect class="p-box" x="869" y="22" width="90" height="36" rx="3"/>
+<text class="p-label" x="914" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Transactional</text>
+<text class="p-label" x="914" y="50" text-anchor="middle" font-size="8.5">Outbox</text>
+
+<!-- Relay -->
+<rect class="p-box p-box-amber" x="965" y="16" width="90" height="48" rx="3"/>
+<text class="p-label-amber" x="1010" y="34" text-anchor="middle" font-size="8.5" font-weight="600">Outbox Relay</text>
+<text class="p-label-amber" x="1010" y="47" text-anchor="middle" font-size="8.5">(CDC / poller)</text>
+
+<!-- Kafka -->
+<rect class="p-box p-box-amber" x="1063" y="22" width="82" height="36" rx="3"/>
+<text class="p-label-amber" x="1104" y="44" text-anchor="middle" font-size="8.5" font-weight="500">Kafka</text>
+
+<!-- Elasticsearch -->
+<rect class="p-box p-box-amber" x="1157" y="22" width="82" height="36" rx="3"/>
+<text class="p-label-amber" x="1198" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Elastic</text>
+<text class="p-label-amber" x="1198" y="50" text-anchor="middle" font-size="8.5">search</text>
+
+<!-- Audit -->
+<rect class="p-box p-box-amber" x="1251" y="22" width="82" height="36" rx="3"/>
+<text class="p-label-amber" x="1292" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Unified</text>
+<text class="p-label-amber" x="1292" y="50" text-anchor="middle" font-size="8.5">Audit Log</text>
+
+<!-- Consumers -->
+<rect class="p-box p-box-green" x="1305" y="22" width="140" height="36" rx="3"/>
+<text class="p-label-green" x="1375" y="37" text-anchor="middle" font-size="8.5" font-weight="500">Consumers ×4</text>
+<text class="p-label-green" x="1375" y="50" text-anchor="middle" font-size="7.5">Pricing · Reco · Analytics · Notify</text>
+
+<!-- ── Lifelines ── -->
+<line class="lifeline" x1="58"   y1="58"  x2="58"   y2="1005"/>
+<line class="lifeline" x1="162"  y1="58"  x2="162"  y2="1005"/>
+<line class="lifeline" x1="266"  y1="58"  x2="266"  y2="1005"/>
+<line class="lifeline lifeline-purple" x1="386" y1="64"  x2="386"  y2="1005"/>
+<line class="lifeline" x1="506"  y1="58"  x2="506"  y2="1005"/>
+<line class="lifeline" x1="606"  y1="58"  x2="606"  y2="1005"/>
+<line class="lifeline" x1="710"  y1="58"  x2="710"  y2="1005"/>
+<line class="lifeline" x1="814"  y1="58"  x2="814"  y2="1005"/>
+<line class="lifeline" x1="914"  y1="58"  x2="914"  y2="1005"/>
+<line class="lifeline lifeline-amber" x1="1010" y1="64" x2="1010" y2="1005"/>
+<line class="lifeline" x1="1104" y1="58"  x2="1104" y2="1005"/>
+<line class="lifeline" x1="1198" y1="58"  x2="1198" y2="1005"/>
+<line class="lifeline" x1="1292" y1="58"  x2="1292" y2="1005"/>
+<line class="lifeline lifeline-green" x1="1375" y1="58" x2="1375" y2="1005"/>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1 — Write path (y 80–390)
+══════════════════════════════════════════════ -->
+<rect class="band-write" x="8" y="80" width="955" height="308" rx="4"/>
+<text class="band-label band-label-purple" x="16" y="94">Write path</text>
+<text class="band-sublabel" x="16" y="105">Restaurants · Shops · Pharmacy — same API, vertical slices in DB</text>
+
+<!-- 1: Merchant → API -->
+<line class="arr-def" x1="162" y1="128" x2="380" y2="128" marker-end="url(#m-def)"/>
+<text class="lbl-num" x="165" y="124">1</text>
+<text class="lbl-def" x="175" y="124">HTTP cmd (create / update inventory)</text>
+
+<!-- 2: BackOffice → API -->
+<line class="arr-def" x1="266" y1="154" x2="380" y2="154" marker-end="url(#m-def)"/>
+<text class="lbl-num" x="269" y="150">2</text>
+<text class="lbl-def" x="279" y="150">HTTP cmd (admin / bulk)</text>
+
+<!-- 3: API → InvItem -->
+<line class="arr-blue" x1="386" y1="182" x2="500" y2="182" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="389" y="178">3</text>
+<text class="lbl-blue" x="399" y="178">Upsert catalog (vertical record)</text>
+
+<!-- 4: API → InvPrice -->
+<line class="arr-blue" x1="386" y1="210" x2="600" y2="210" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="389" y="206">4</text>
+<text class="lbl-blue" x="399" y="206">Upsert price record</text>
+
+<!-- 5: API → InvAvail -->
+<line class="arr-blue" x1="386" y1="238" x2="704" y2="238" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="389" y="234">5</text>
+<text class="lbl-blue" x="399" y="234">Upsert availability record</text>
+
+<!-- 6: API → InvStats -->
+<line class="arr-blue" x1="386" y1="266" x2="808" y2="266" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="389" y="262">6</text>
+<text class="lbl-blue" x="399" y="262">Upsert analytics record</text>
+
+<!-- 7: API → Outbox (purple, bolder) -->
+<line class="arr-purple" x1="386" y1="296" x2="908" y2="296" marker-end="url(#m-purple)"/>
+<text class="lbl-num" x="389" y="292">7</text>
+<text class="lbl-purple" x="399" y="292">Append domain event(s) — same transaction</text>
+
+<!-- Commit note pill -->
+<rect class="commit-bg" x="792" y="304" width="164" height="16" rx="3"/>
+<text class="commit-txt" x="874" y="315" text-anchor="middle">✓ Commit: writes + outbox atomic</text>
+
+<!-- Activation box on API lifeline during write path -->
+<rect x="382" y="120" width="8" height="192" rx="2" fill="#16143a" stroke="#3a2870" stroke-width="0.5"/>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2 — Outbox Relay (y 400–598)
+══════════════════════════════════════════════ -->
+<rect class="band-relay" x="875" y="400" width="468" height="196" rx="4"/>
+<text class="band-label band-label-amber" x="883" y="414">Guaranteed delivery path</text>
+
+<!-- 8: Outbox ⇢ Relay (dashed) -->
+<line class="arr-def arr-dashed" x1="914" y1="440" x2="1004" y2="440" marker-end="url(#m-gray)"/>
+<text class="lbl-num" x="917" y="436">8</text>
+<text class="lbl-def" x="927" y="436">CDC change / polled batch</text>
+
+<!-- Relay self-arrow: Retry/ordering -->
+<path class="arr-amber" d="M1010,464 Q1054,464 1054,482 Q1054,502 1010,502" marker-end="url(#m-amber)"/>
+<text class="lbl-num" x="1013" y="479">9</text>
+<text class="lbl-amber" x="1058" y="477">Retry, ordering,</text>
+<text class="lbl-amber" x="1058" y="489">idempotency key</text>
+
+<!-- par: Relay → Kafka / Elastic / Audit -->
+<!-- par label -->
+<rect x="876" y="519" width="26" height="13" rx="2" fill="#3a2e00" stroke="#5a3d0e" stroke-width="0.5"/>
+<text x="889" y="529" text-anchor="middle" font-size="7" fill="#e8a838" font-weight="600">par</text>
+
+<!-- 10: Relay → Kafka -->
+<line class="arr-amber" x1="1010" y1="530" x2="1097" y2="530" marker-end="url(#m-amber)"/>
+<text class="lbl-num" x="1013" y="526">10</text>
+<text class="lbl-amber" x="1028" y="526">Inventory events</text>
+
+<!-- 11: Relay → Elastic -->
+<line class="arr-amber" x1="1010" y1="554" x2="1191" y2="554" marker-end="url(#m-amber)"/>
+<text class="lbl-num" x="1013" y="550">11</text>
+<text class="lbl-amber" x="1028" y="550">Upsert read model docs</text>
+
+<!-- 12: Relay → Audit -->
+<line class="arr-amber" x1="1010" y1="578" x2="1285" y2="578" marker-end="url(#m-amber)"/>
+<text class="lbl-num" x="1013" y="574">12</text>
+<text class="lbl-amber" x="1028" y="574">Before / after JSON (unified audit)</text>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 3 — Kafka consumers (y 614–774)
+══════════════════════════════════════════════ -->
+<rect class="band-kafka" x="1063" y="614" width="380" height="158" rx="4"/>
+<text class="band-label band-label-green" x="1071" y="628">Async, idempotent handlers</text>
+
+<!-- 13–16: Kafka → Consumers -->
+<line class="arr-green" x1="1104" y1="648" x2="1368" y2="648" marker-end="url(#m-green)"/>
+<text class="lbl-num" x="1107" y="644">13</text>
+<text class="lbl-green" x="1120" y="644">Pricing Engine — consume</text>
+
+<line class="arr-green" x1="1104" y1="674" x2="1368" y2="674" marker-end="url(#m-green)"/>
+<text class="lbl-num" x="1107" y="670">14</text>
+<text class="lbl-green" x="1120" y="670">Recommendation Svc — consume</text>
+
+<line class="arr-green" x1="1104" y1="700" x2="1368" y2="700" marker-end="url(#m-green)"/>
+<text class="lbl-num" x="1107" y="696">15</text>
+<text class="lbl-green" x="1120" y="696">Analytics Pipeline — consume</text>
+
+<line class="arr-green" x1="1104" y1="726" x2="1368" y2="726" marker-end="url(#m-green)"/>
+<text class="lbl-num" x="1107" y="722">16</text>
+<text class="lbl-green" x="1120" y="722">Notification Svc — consume</text>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4 — Read side (y 796–970)
+══════════════════════════════════════════════ -->
+<rect class="band-read" x="8" y="796" width="1242" height="192" rx="4"/>
+<text class="band-label band-label-blue" x="16" y="810">Read side — search / listings (offloads Postgres)</text>
+
+<!-- 17: CustomerApp → Elastic -->
+<line class="arr-blue" x1="58" y1="836" x2="1191" y2="836" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="61" y="832">17</text>
+<text class="lbl-blue" x="74" y="832">CustomerApp: query read model</text>
+
+<!-- 18: Elastic ⇢ CustomerApp -->
+<line class="arr-def arr-dashed" x1="1198" y1="858" x2="65" y2="858" marker-end="url(#m-gray)"/>
+<text class="lbl-num" x="61" y="872">18</text>
+<text class="lbl-def" x="560" y="872">Results</text>
+
+<!-- 19: MerchantPortal → Elastic -->
+<line class="arr-blue" x1="162" y1="900" x2="1191" y2="900" marker-end="url(#m-blue)"/>
+<text class="lbl-num" x="165" y="896">19</text>
+<text class="lbl-blue" x="178" y="896">MerchantPortal: query read model</text>
+
+<!-- 20: Elastic ⇢ MerchantPortal -->
+<line class="arr-def arr-dashed" x1="1198" y1="922" x2="169" y2="922" marker-end="url(#m-gray)"/>
+<text class="lbl-num" x="165" y="936">20</text>
+<text class="lbl-def" x="600" y="936">Results</text>
+
+<!-- ══════════════════════════════════════════════
+     ACTIVATION BOXES (visual depth)
+══════════════════════════════════════════════ -->
+<!-- Relay activation during delivery phase -->
+<rect x="1006" y="432" width="8" height="154" rx="2" fill="#201500" stroke="#5a3d0e" stroke-width="0.5"/>
+<!-- Kafka activation during consumer fan-out -->
+<rect x="1100" y="640" width="8" height="94" rx="2" fill="#070e04" stroke="#2a3a10" stroke-width="0.5"/>
+
+</svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5140/api/menus
+
+### Add items to a menu
+# Replace {menuId} with a real menu ID
+# Replace item IDs with real inventory item IDs
+POST {{baseUrl}}/{menuId}/items
+Content-Type: application/json
+
+{
+  "inventoryItemIds": ["item-id-1", "item-id-2"]
+}
+
+### Get menu items
+GET {{baseUrl}}/{menuId}/items
+
+### Remove an item from a menu
+DELETE {{baseUrl}}/{menuId}/items/{inventoryItemId}

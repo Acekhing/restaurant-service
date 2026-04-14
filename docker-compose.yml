@@ -1,0 +1,29 @@
+# Local-first: PostgreSQL, Redis, Elasticsearch, and Kafka run on your machine.
+# This Compose file only runs Kafka Connect (Debezium) so CDC can publish to your local Kafka.
+#
+# Prerequisites on the host:
+#   - PostgreSQL with wal_level=logical and databases restaurant_inventory, shop_inventory, pharmacy_inventory
+#   - Kafka listening on localhost:9092 (reachable from Docker — use extra_hosts below)
+#
+# Typical flow:
+#   1. bash docker/migrate.sh
+#   2. docker compose up -d
+#   3. bash docker/register-connectors.sh
+#
+# All-in-Docker stack: docker compose -f docker-compose.full-stack.yml up -d
+
+services:
+  connect:
+    image: quay.io/debezium/connect:2.7
+    ports:
+      - "8083:8083"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP:-host.docker.internal:9092}
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter

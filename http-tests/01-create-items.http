@@ -1,0 +1,67 @@
+@baseUrl = http://localhost:5140/api/inventoryitems
+
+### Create a restaurant menu item - Jollof Rice
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Jollof Rice with Chicken",
+  "ownerId": "rest-001",
+  "displayPrice": 45.00,
+  "itemType": "restaurant"
+}
+
+### Create a restaurant menu item - Banku
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Banku with Tilapia",
+  "ownerId": "rest-001",
+  "displayPrice": 55.00,
+  "itemType": "restaurant"
+}
+
+### Create a pharmacy item - Paracetamol
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Paracetamol 500mg",
+  "ownerId": "pharm-001",
+  "displayPrice": 12.50,
+  "itemType": "pharmacy"
+}
+
+### Create a pharmacy item - Vitamin C
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Vitamin C 1000mg Tablets",
+  "ownerId": "pharm-001",
+  "displayPrice": 25.00,
+  "itemType": "pharmacy"
+}
+
+### Create a shop item - Sneakers
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Nike Air Max Sneakers",
+  "ownerId": "shop-001",
+  "displayPrice": 350.00,
+  "itemType": "shop"
+}
+
+### Create a shop item - Earbuds
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Samsung Galaxy Earbuds",
+  "ownerId": "shop-001",
+  "displayPrice": 180.00,
+  "itemType": "shop"
+}

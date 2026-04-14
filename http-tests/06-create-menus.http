@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:5140/api/menus
+
+### Create a restaurant menu with items
+# Replace item IDs below with real IDs from POST /api/inventoryitems
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Lunch Special",
+  "description": "A selection of our best lunch dishes",
+  "ownerId": "rest-001",
+  "itemType": "restaurant",
+  "itemIds": []
+}
+
+### Create a pharmacy menu
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Cold & Flu Bundle",
+  "description": "Essential cold and flu medications",
+  "ownerId": "pharm-001",
+  "itemType": "pharmacy",
+  "itemIds": []
+}
+
+### Create a shop menu
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Tech Essentials",
+  "description": "Must-have tech accessories",
+  "ownerId": "shop-001",
+  "itemType": "shop",
+  "itemIds": []
+}

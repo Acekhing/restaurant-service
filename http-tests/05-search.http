@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:5140/api/inventory/search
+
+# Requires Elasticsearch to be running
+
+### Search all (match_all)
+GET {{baseUrl}}
+
+### Full-text search for "jollof"
+GET {{baseUrl}}?q=jollof
+
+### Filter by itemType
+GET {{baseUrl}}?itemType=restaurant
+
+### Filter by ownerId
+GET {{baseUrl}}?ownerId=rest-001
+
+### Filter by availability
+GET {{baseUrl}}?available=true
+
+### Combined: search + filter + pagination
+GET {{baseUrl}}?q=rice&itemType=restaurant&page=1&size=5
+
+### Get item from Elasticsearch by ID (replace with actual ID)
+@itemId = REPLACE_WITH_ITEM_ID
+GET {{baseUrl}}/{{itemId}}

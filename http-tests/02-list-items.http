@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:5140/api/inventoryitems
+
+### List ALL items
+GET {{baseUrl}}
+
+### List only restaurant items
+GET {{baseUrl}}?itemType=restaurant
+
+### List only pharmacy items
+GET {{baseUrl}}?itemType=pharmacy
+
+### List only shop items
+GET {{baseUrl}}?itemType=shop

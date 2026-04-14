@@ -1,0 +1,23 @@
+@baseUrl = http://localhost:5140/api/menus/search
+
+### Search all menus (from Elasticsearch)
+GET {{baseUrl}}
+
+### Search menus by text
+GET {{baseUrl}}?q=lunch
+
+### Search menus by item type
+GET {{baseUrl}}?itemType=restaurant
+
+### Search menus by owner
+GET {{baseUrl}}?ownerId=rest-001
+
+### Search active menus only
+GET {{baseUrl}}?active=true
+
+### Search with pagination
+GET {{baseUrl}}?page=1&size=10
+
+### Get menu by ID from ES
+# Replace {menuId} with a real menu ID
+GET {{baseUrl}}/{menuId}

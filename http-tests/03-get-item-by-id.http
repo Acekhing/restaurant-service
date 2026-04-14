@@ -1,0 +1,10 @@
+@baseUrl = http://localhost:5140/api/inventoryitems
+
+# Replace with an actual item ID from the create or list responses
+@itemId = REPLACE_WITH_ITEM_ID
+
+### Get item by ID
+GET {{baseUrl}}/{{itemId}}
+
+### Get non-existent item (expect 404)
+GET {{baseUrl}}/non-existent-id

@@ -1,0 +1,169 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_DB: peters_school_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d peters_school_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  admin-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_PROJECT: Admin.API
+    command: ["Admin.API.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=peters_school_db;Username=${DB_USER};Password=${DB_PASSWORD}"
+      JwtSettings__SecretKey: ${JWT_SECRET}
+      SmtpSettings__Host: ${SMTP_HOST}
+      SmtpSettings__Port: ${SMTP_PORT}
+      SmtpSettings__Username: ${SMTP_USER}
+      SmtpSettings__Password: ${SMTP_PASS}
+      SmtpSettings__FrontendBaseUrl: ${FRONTEND_URL}
+      CorsSettings__AllowedOrigins: ${CORS_ORIGINS}
+      SeedAdmin__Username: ${SEED_ADMIN_USERNAME}
+      SeedAdmin__Email: ${SEED_ADMIN_EMAIL}
+      SeedAdmin__Password: ${SEED_ADMIN_PASSWORD}
+      SeedAdmin__FirstName: ${SEED_ADMIN_FIRSTNAME}
+      SeedAdmin__LastName: ${SEED_ADMIN_LASTNAME}
+      Otel__Endpoint: ${OTEL_ENDPOINT:-http://signoz-otel-collector:4317}
+    networks:
+      - backend
+      - observability
+
+  student-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_PROJECT: Student.API
+    command: ["Student.API.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=peters_school_db;Username=${DB_USER};Password=${DB_PASSWORD}"
+      JwtSettings__SecretKey: ${JWT_SECRET}
+      SmtpSettings__Host: ${SMTP_HOST}
+      SmtpSettings__Port: ${SMTP_PORT}
+      SmtpSettings__Username: ${SMTP_USER}
+      SmtpSettings__Password: ${SMTP_PASS}
+      SmtpSettings__FrontendBaseUrl: ${FRONTEND_URL}
+      CorsSettings__AllowedOrigins: ${CORS_ORIGINS}
+      Redis__ConnectionString: redis:6379
+      Otel__Endpoint: ${OTEL_ENDPOINT:-http://signoz-otel-collector:4317}
+    networks:
+      - backend
+      - observability
+
+  teachers-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_PROJECT: Teachers.API
+    command: ["Teachers.API.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=peters_school_db;Username=${DB_USER};Password=${DB_PASSWORD}"
+      JwtSettings__SecretKey: ${JWT_SECRET}
+      SmtpSettings__Host: ${SMTP_HOST}
+      SmtpSettings__Port: ${SMTP_PORT}
+      SmtpSettings__Username: ${SMTP_USER}
+      SmtpSettings__Password: ${SMTP_PASS}
+      SmtpSettings__FrontendBaseUrl: ${FRONTEND_URL}
+      CorsSettings__AllowedOrigins: ${CORS_ORIGINS}
+      Otel__Endpoint: ${OTEL_ENDPOINT:-http://signoz-otel-collector:4317}
+    networks:
+      - backend
+      - observability
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWORD}
+      BACKUP_RETAIN_DAYS: ${BACKUP_RETAIN_DAYS:-30}
+      BACKUP_CRON_SCHEDULE: "${BACKUP_CRON_SCHEDULE:-0 2 * * *}"
+    volumes:
+      - ./scripts/backup-db.sh:/usr/local/bin/backup-db.sh:ro
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Installing cron schedule: $$BACKUP_CRON_SCHEDULE"
+        echo "$$BACKUP_CRON_SCHEDULE /usr/local/bin/backup-db.sh >> /var/log/backup.log 2>&1" | crontab -
+        crond -f -l 2
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - admin-api
+      - student-api
+      - teachers-api
+    networks:
+      - backend
+      - school_shared
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    driver: bridge
+  observability:
+    external: true
+  school_shared:
+    external: true

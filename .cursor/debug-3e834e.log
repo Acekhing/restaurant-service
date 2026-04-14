@@ -1,0 +1,2 @@
+{"sessionId":"3e834e","location":"InventorySearchController:Search","message":"Search params","data":{"q":null,"itemType":null,"ownerId":null,"available":null,"page":1,"size":20},"timestamp":1775669038667,"hypothesisId":"A,B,C"}
+{"sessionId":"3e834e","location":"InventorySearchController:Search:response","message":"ES response","data":{"isValid":true,"total":7,"docCount":7,"sampleOwnerIds":["rest-001","rest-001","rest-001"],"debugInfo":null},"timestamp":1775669038675,"hypothesisId":"A,B,D"}

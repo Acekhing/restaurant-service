@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:5140/api/inventoryitems
+
+# Replace with an actual item ID from the create or list responses
+@itemId = REPLACE_WITH_ITEM_ID
+
+### Create promotion - 10 GHS off, valid for 7 days
+POST {{baseUrl}}/{{itemId}}/promotions
+Content-Type: application/json
+
+{
+  "discountAmount": 10.00,
+  "currency": "GHS",
+  "effectiveFrom": "2026-04-08T00:00:00Z",
+  "effectiveTo": "2026-04-15T00:00:00Z"
+}
+
+### Create promotion with default currency
+POST {{baseUrl}}/{{itemId}}/promotions
+Content-Type: application/json
+
+{
+  "discountAmount": 5.00,
+  "effectiveFrom": "2026-04-08T00:00:00Z",
+  "effectiveTo": "2026-04-22T00:00:00Z"
+}
+
+### Verify item now has promotion attached
+GET {{baseUrl}}/{{itemId}}
+
+### Create promotion on non-existent item (expect 404)
+POST {{baseUrl}}/non-existent-id/promotions
+Content-Type: application/json
+
+{
+  "discountAmount": 5.00,
+  "effectiveFrom": "2026-04-08T00:00:00Z",
+  "effectiveTo": "2026-04-15T00:00:00Z"
+}

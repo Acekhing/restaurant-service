@@ -1,0 +1,16 @@
+bin/
+obj/
+.env
+.vs/
+*.user
+.idea/
+*.DotSettings.user
+my-vps/
+.my-vps/
+*my-vps*
+*.my-vps/
+*my-vps/
+doc/restaurants.json
+doc/pharmacy.json
+doc/shops.json
+https-tests/

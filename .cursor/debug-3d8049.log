@@ -1,0 +1,2 @@
+{"sessionId":"3d8049","location":"PromotionsController.cs:List","message":"List endpoint response shape","data":{"count":2,"rawInventoryItemIds":null,"rawMenuIds":null,"deserializedItemIds":null,"deserializedMenuIds":null},"timestamp":1775756665095}
+{"sessionId":"3d8049","location":"PromotionsController.cs:List","message":"List endpoint response shape","data":{"count":2,"rawInventoryItemIds":null,"rawMenuIds":null,"deserializedItemIds":null,"deserializedMenuIds":null},"timestamp":1775756788001}
