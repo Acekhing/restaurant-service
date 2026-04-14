@@ -34,7 +34,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RetailerProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AppShell>
             <Routes>
               <Route path="/" element={<Navigate to="/menu-editor/menus" replace />} />

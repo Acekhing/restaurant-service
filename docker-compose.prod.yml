@@ -1,0 +1,247 @@
+services:
+
+  # ──────────────── Infrastructure ────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: postgres
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_wal_senders=16
+      - -c
+      - max_replication_slots=16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - qc-inventory
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - qc-inventory
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - qc-inventory
+
+  connect:
+    image: quay.io/debezium/connect:2.7
+    restart: unless-stopped
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    networks:
+      - qc-inventory
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - qc-inventory
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms1g -Xmx1g}"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - qc-inventory
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.3
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    ports:
+      - "8081:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - qc-inventory
+
+  # ──────────────── One-shot setup containers ────────────────
+
+  migrate:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: ["sh", "/src/docker/migrate.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - qc-inventory
+    restart: "no"
+
+  connect-register:
+    image: curlimages/curl:8.5.0
+    working_dir: /work
+    volumes:
+      - .:/work
+    command: ["sh", "/work/docker/register-connectors.sh"]
+    environment:
+      CONNECT_URL: http://connect:8083
+      POSTGRES_HOST: postgres
+    depends_on:
+      connect:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - qc-inventory
+    restart: "no"
+
+  # ──────────────── Application services ────────────────
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.dotnet
+      args:
+        PROJECT: Inventory.API
+    command: ["Inventory.API.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Inventory: "Host=postgres;Port=5432;Database=inventory;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
+      Elasticsearch__Uri: http://elasticsearch:9200
+    networks:
+      - qc-inventory
+
+  elastic-projector:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.dotnet
+      args:
+        PROJECT: Inventory.ElasticProjector
+    command: ["Inventory.ElasticProjector.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      Kafka__BootstrapServers: kafka:29092
+      Kafka__GroupId: inventory-elastic-projector
+      Kafka__Topics__0: inventory.outbox
+      Redis__ConnectionString: redis:6379
+      Redis__KeyPrefix: "outbox:elastic:"
+      Elasticsearch__Uri: http://elasticsearch:9200
+      Database__ConnectionString: "Host=postgres;Port=5432;Database=inventory;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
+    networks:
+      - qc-inventory
+
+  audit-worker:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.dotnet
+      args:
+        PROJECT: Inventory.AuditWorker
+    command: ["Inventory.AuditWorker.dll"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      Kafka__BootstrapServers: kafka:29092
+      Kafka__GroupId: inventory-audit-worker
+      Kafka__Topics__0: inventory.outbox
+      Redis__ConnectionString: redis:6379
+      Redis__KeyPrefix: "outbox:audit:"
+      Database__ConnectionString: "Host=postgres;Port=5432;Database=inventory;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
+    networks:
+      - qc-inventory
+
+  # ──────────────── Nginx (frontends + reverse proxy) ────────────────
+
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - qc-inventory
+
+volumes:
+  postgres_data:
+  es_data:
+
+networks:
+  qc-inventory:
+    driver: bridge

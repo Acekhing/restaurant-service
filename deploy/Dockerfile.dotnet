@@ -1,0 +1,27 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+ARG PROJECT
+WORKDIR /src
+
+COPY QCInventory.sln ./
+COPY Directory.Build.props ./
+COPY src/Inventory.API/Inventory.API.csproj src/Inventory.API/
+COPY src/InventoryCore/InventoryCore.csproj src/InventoryCore/
+COPY src/Inventory.Contracts/Inventory.Contracts.csproj src/Inventory.Contracts/
+COPY src/Inventory.ElasticProjector/Inventory.ElasticProjector.csproj src/Inventory.ElasticProjector/
+COPY src/Inventory.AuditWorker/Inventory.AuditWorker.csproj src/Inventory.AuditWorker/
+COPY src/Inventory.Tests/Inventory.Tests.csproj src/Inventory.Tests/
+COPY src/Infrastructure.StressSimulation/Infrastructure.StressSimulation.csproj src/Infrastructure.StressSimulation/
+
+RUN dotnet restore
+
+COPY src/ src/
+RUN dotnet publish "src/${PROJECT}/${PROJECT}.csproj" -c Release -o /app/publish --no-restore
+
+FROM base AS final
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+ENTRYPOINT ["dotnet"]
