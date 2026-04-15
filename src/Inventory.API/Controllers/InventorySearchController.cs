@@ -1,5 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Inventory.API.Elasticsearch;
 using Inventory.Contracts.ReadModel;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,7 +37,20 @@ public sealed class InventorySearchController : ControllerBase
             .Query(BuildQuery(q, itemType, retailerType, ownerId, available)), ct);
 
         if (!resp.IsValidResponse)
+        {
+            if (resp.IsMissingOrUnavailableSearchIndex())
+            {
+                return Ok(new SearchResultDto
+                {
+                    Items = [],
+                    Total = 0,
+                    Page = page,
+                    Size = size
+                });
+            }
+
             return StatusCode(502, new { error = "Elasticsearch query failed", detail = resp.DebugInformation });
+        }
 
         return Ok(new SearchResultDto
         {

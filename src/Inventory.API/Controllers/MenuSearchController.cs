@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Inventory.API.Elasticsearch;
 using Inventory.Contracts.ReadModel;
 using Microsoft.AspNetCore.Mvc;
 
@@ -64,7 +65,20 @@ public sealed class MenuSearchController : ControllerBase
             .Query(BuildQuery(q, ownerId, active)), ct);
 
         if (!resp.IsValidResponse)
+        {
+            if (resp.IsMissingOrUnavailableSearchIndex())
+            {
+                return Ok(new MenuSearchResultDto
+                {
+                    Items = [],
+                    Total = 0,
+                    Page = page,
+                    Size = size
+                });
+            }
+
             return StatusCode(502, new { error = "Elasticsearch query failed", detail = resp.DebugInformation });
+        }
 
         return Ok(new MenuSearchResultDto
         {
