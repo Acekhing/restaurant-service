@@ -11,7 +11,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 flex h-12 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <Store className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-semibold truncate">
-          {retailerName || "Waiter Portal"}
+          {retailerName || "Employee Portal"}
         </span>
       </header>
 

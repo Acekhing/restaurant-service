@@ -24,7 +24,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-14 items-center border-b px-5">
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <Briefcase className="h-5 w-5" />
-            <span>QC Retailer Portal</span>
+            <span>BackOffice / Admin</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -52,7 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
           <Link to="/" className="flex items-center gap-2 font-semibold md:hidden">
             <Briefcase className="h-5 w-5" />
-            <span>QC Retailer Portal</span>
+            <span>BackOffice / Admin</span>
           </Link>
 
           <div className="ml-auto flex items-center gap-3">

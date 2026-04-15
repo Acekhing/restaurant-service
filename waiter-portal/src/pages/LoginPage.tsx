@@ -48,7 +48,7 @@ export default function LoginPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Store className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">Waiter Portal</h1>
+          <h1 className="mt-4 text-2xl font-bold">Employee Portal</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Sign in with your account
           </p>

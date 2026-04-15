@@ -31,7 +31,7 @@ export default function SelectRestaurantPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Store className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">Waiter Portal</h1>
+          <h1 className="mt-4 text-2xl font-bold">Employee Portal</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Select your restaurant to get started
           </p>
@@ -44,7 +44,7 @@ export default function SelectRestaurantPage() {
           </div>
         ) : !restaurants || restaurants.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No restaurants found. Please create one in the retailer portal first.
+            No restaurants found. Please create one in the Retailer Portal first.
           </p>
         ) : (
           <div className="space-y-2">

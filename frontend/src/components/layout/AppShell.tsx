@@ -22,7 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-14 items-center border-b px-5">
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <Package className="h-5 w-5" />
-            <span>QC Inventory</span>
+            <span>Retailer Portal</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -53,7 +53,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {/* Mobile: brand + hamburger */}
           <Link to="/" className="flex items-center gap-2 font-semibold md:hidden">
             <Package className="h-5 w-5" />
-            <span>QC Inventory</span>
+            <span>Retailer Portal</span>
           </Link>
 
           <div className="ml-auto flex items-center gap-3">
