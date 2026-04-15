@@ -77,10 +77,15 @@ port_in_use() {
 
 TARGET_PORT="${APP_PORT:-80}"
 if port_in_use "$TARGET_PORT"; then
-    red "ERROR: Port $TARGET_PORT is already in use."
-    echo "Find what is listening: ss -tlnp | grep ':$TARGET_PORT '"
-    echo "Or change the port by setting APP_PORT in $ENV_FILE (e.g. APP_PORT=8082)."
-    exit 1
+    # Redeploy: same port is held by our nginx container — allow `up --build` to replace it.
+    if (cd "$PROJECT_ROOT" && docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps nginx --status running -q 2>/dev/null | grep -q .); then
+        bold "Port $TARGET_PORT is in use by this stack (redeploy); continuing."
+    else
+        red "ERROR: Port $TARGET_PORT is already in use."
+        echo "Find what is listening: ss -tlnp | grep ':$TARGET_PORT '"
+        echo "Or change the port by setting APP_PORT in $ENV_FILE."
+        exit 1
+    fi
 fi
 
 # ──────────────── Build & Start ────────────────
