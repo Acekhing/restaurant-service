@@ -10,6 +10,10 @@ PG_PASS="${POSTGRES_PASSWORD:-postgres}"
 
 CS_BASE="Host=${PG_HOST};Port=${PG_PORT};Username=${PG_USER};Password=${PG_PASS}"
 
+echo "Building project for migrations..."
+dotnet build src/Inventory.API/Inventory.API.csproj -c Release
+
+echo "Applying migrations to ${PG_HOST}:${PG_PORT}..."
 dotnet ef database update \
   --project src/Inventory.API/Inventory.API.csproj \
   --startup-project src/Inventory.API/Inventory.API.csproj \

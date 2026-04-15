@@ -60,6 +60,29 @@ fi
 
 green "Environment file looks good."
 
+# ──────────────── Port Check ────────────────
+
+port_in_use() {
+    local p="$1"
+    if command -v lsof &>/dev/null; then
+        lsof -Pi :"$p" -sTCP:LISTEN -t >/dev/null 2>&1
+        return $?
+    fi
+    if command -v ss &>/dev/null; then
+        ss -tln 2>/dev/null | awk 'NR>1 {print $4}' | grep -qE ":${p}$"
+        return $?
+    fi
+    return 1
+}
+
+TARGET_PORT="${APP_PORT:-80}"
+if port_in_use "$TARGET_PORT"; then
+    red "ERROR: Port $TARGET_PORT is already in use."
+    echo "Find what is listening: ss -tlnp | grep ':$TARGET_PORT '"
+    echo "Or change the port by setting APP_PORT in $ENV_FILE (e.g. APP_PORT=8082)."
+    exit 1
+fi
+
 # ──────────────── Build & Start ────────────────
 
 bold "Building and starting all services..."
@@ -93,10 +116,10 @@ SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "<VPS_IP>")
 green "Deployment complete!"
 echo ""
 bold "Access points:"
-echo "  Frontend:       http://$SERVER_IP:8080/"
-echo "  Waiter Portal:  http://$SERVER_IP:8080/waiter/"
-echo "  Backoffice:     http://$SERVER_IP:8080/backoffice/"
-echo "  API / Swagger:  http://$SERVER_IP:8080/swagger"
+echo "  Frontend:       http://$SERVER_IP:${APP_PORT:-80}/"
+echo "  Waiter Portal:  http://$SERVER_IP:${APP_PORT:-80}/waiter/"
+echo "  Backoffice:     http://$SERVER_IP:${APP_PORT:-80}/backoffice/"
+echo "  API / Swagger:  http://$SERVER_IP:${APP_PORT:-80}/swagger"
 echo "  Kibana:         http://$SERVER_IP:8081"
 echo ""
 bold "Useful commands:"
