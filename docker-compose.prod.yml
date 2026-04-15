@@ -1,3 +1,7 @@
+# Interpolation uses POSTGRES_PASSWORD and APP_PORT from the project ".env" file.
+# deploy/deploy.sh symlinks .env -> .env.production, or run: ln -sf .env.production .env
+# You can also pass: --env-file .env.production
+
 services:
 
   # ──────────────── Infrastructure ────────────────

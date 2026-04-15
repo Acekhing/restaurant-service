@@ -60,6 +60,14 @@ fi
 
 green "Environment file looks good."
 
+# Docker Compose only loads ".env" for ${VAR} interpolation in this file — not ".env.production".
+# Symlink .env -> .env.production so plain `docker compose -f docker-compose.prod.yml up` sees POSTGRES_PASSWORD.
+ENV_DOT="$PROJECT_ROOT/.env"
+if [ ! -e "$ENV_DOT" ] || { [ -L "$ENV_DOT" ] && [ ! -e "$ENV_DOT" ]; }; then
+    ln -sf .env.production "$ENV_DOT"
+    bold "Linked .env -> .env.production (Compose variable interpolation)."
+fi
+
 # ──────────────── Port Check ────────────────
 
 port_in_use() {
@@ -128,6 +136,7 @@ echo "  API / Swagger:  http://$SERVER_IP:${APP_PORT:-80}/swagger"
 echo "  Kibana:         http://$SERVER_IP:8081"
 echo ""
 bold "Useful commands:"
-echo "  Logs:     docker compose -f $COMPOSE_FILE logs -f <service>"
-echo "  Stop:     docker compose -f $COMPOSE_FILE down"
-echo "  Rebuild:  docker compose -f $COMPOSE_FILE up -d --build"
+echo "  Logs:     $SCRIPT_DIR/compose-up.sh logs -f <service>"
+echo "  Stop:     $SCRIPT_DIR/compose-up.sh down"
+echo "  Rebuild:  $SCRIPT_DIR/compose-up.sh up -d --build"
+echo "  (compose-up.sh loads .env.production; raw docker compose needs --env-file .env.production)"
