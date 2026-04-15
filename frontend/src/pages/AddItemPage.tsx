@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useCreateItem } from "@/hooks/useInventory";
 import { useRetailers } from "@/hooks/useRetailer";
+import { randomUuid } from "@/lib/uuid";
 import type { InventoryOpeningHours } from "@/types/inventory";
 import type { RetailerType } from "@/types/retailer";
 
@@ -15,7 +16,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 
 function defaultOpeningHours(): InventoryOpeningHours[] {
   return DAYS.map((day) => ({
-    id: crypto.randomUUID(),
+    id: randomUuid(),
     day,
     openingTime: "08:00",
     closingTime: "17:00",
