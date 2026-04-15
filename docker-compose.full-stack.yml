@@ -101,6 +101,9 @@ services:
     command: ["sh", "/src/docker/migrate.sh"]
     environment:
       POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      ConnectionStrings__Inventory: "Host=postgres;Port=5432;Database=inventory;Username=postgres;Password=postgres"
     depends_on:
       postgres:
         condition: service_healthy

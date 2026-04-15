@@ -128,6 +128,8 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      # Design-time factory reads this (avoid shell-built --connection in migrate.sh).
+      ConnectionStrings__Inventory: "Host=postgres;Port=5432;Database=inventory;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
     depends_on:
       postgres:
         condition: service_healthy

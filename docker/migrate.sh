@@ -1,22 +1,22 @@
 #!/usr/bin/env sh
 set -eu
 export PATH="$PATH:/root/.dotnet/tools"
-dotnet tool install --global dotnet-ef --version 8.0.* >/dev/null
+export DOTNET_NOLOGO=1
 
-PG_HOST="${POSTGRES_HOST:-localhost}"
-PG_PORT="${POSTGRES_PORT:-5432}"
-PG_USER="${POSTGRES_USER:-postgres}"
-PG_PASS="${POSTGRES_PASSWORD:-postgres}"
-
-CS_BASE="Host=${PG_HOST};Port=${PG_PORT};Username=${PG_USER};Password=${PG_PASS}"
+# Pin a concrete version (avoids shell-glob / NuGet resolution issues on some hosts).
+EF_VERSION="8.0.11"
+if ! dotnet tool list -g | grep -q "dotnet-ef"; then
+  echo "Installing dotnet-ef $EF_VERSION..."
+  dotnet tool install --global dotnet-ef --version "$EF_VERSION"
+fi
 
 echo "Building project for migrations..."
+dotnet restore src/Inventory.API/Inventory.API.csproj
 dotnet build src/Inventory.API/Inventory.API.csproj -c Release
 
-echo "Applying migrations to ${PG_HOST}:${PG_PORT}..."
+echo "Applying migrations (inventory DB on ${POSTGRES_HOST:-postgres})..."
 dotnet ef database update \
   --project src/Inventory.API/Inventory.API.csproj \
-  --startup-project src/Inventory.API/Inventory.API.csproj \
-  --connection "${CS_BASE};Database=inventory"
+  --startup-project src/Inventory.API/Inventory.API.csproj
 
 echo "Migrations applied."

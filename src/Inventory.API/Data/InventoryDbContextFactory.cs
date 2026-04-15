@@ -9,11 +9,16 @@ public sealed class InventoryDbContextFactory : IDesignTimeDbContextFactory<Inve
     {
         var config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddEnvironmentVariables()
             .Build();
 
+        var inventoryCs = config.GetConnectionString("Inventory")
+            ?? throw new InvalidOperationException(
+                "Connection string 'Inventory' is missing. Set ConnectionStrings__Inventory or appsettings.json.");
+
         var options = new DbContextOptionsBuilder<InventoryDbContext>()
-            .UseNpgsql(config.GetConnectionString("Inventory"))
+            .UseNpgsql(inventoryCs)
             .UseSnakeCaseNamingConvention()
             .Options;
 
